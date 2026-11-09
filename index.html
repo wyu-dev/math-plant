@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MathTech Plant OS</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine JS -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="app.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        body { font-family: 'Share Tech Mono', monospace; }
+        .hud-border { border: 1px solid #64ffda; box-shadow: 0 0 10px rgba(100, 255, 218, 0.2); }
+    </style>
+</head>
+<body class="bg-[#0a192f] text-slate-300 min-h-screen p-4" x-data="plantOS">
+
+    <!-- LOG MASUK (ADTEC Auth Simulation) -->
+    <div x-show="!isLoggedIn" class="max-w-md mx-auto mt-20 p-8 hud-border bg-slate-900 rounded-lg">
+        <h1 class="text-2xl text-[#64ffda] text-center mb-6">⚙️ MathTech Plant OS</h1>
+        <p class="text-xs text-amber-500 text-center mb-4">Sila masukkan identiti juruteknik anda</p>
+        
+        <input type="text" x-model="user.name" placeholder="Nama Penuh" class="w-full mb-4 p-2 bg-slate-800 text-white hud-border outline-none">
+        <input type="text" x-model="user.ic_no" placeholder="No. Kad Pengenalan (12 digit)" class="w-full mb-4 p-2 bg-slate-800 text-white hud-border outline-none">
+        <input type="password" x-model="user.ndp" placeholder="Katalaluan (NDP Anda)" class="w-full mb-4 p-2 bg-slate-800 text-white hud-border outline-none">
+        
+        <select x-model="user.course" class="w-full mb-6 p-2 bg-slate-800 text-[#64ffda] hud-border outline-none">
+            <option value="" disabled selected>-- Pilih Sektor (Kursus) --</option>
+            <option value="Mekatronik">Mekatronik</option>
+            <option value="Automotif">Automotif</option>
+            <option value="Kimpalan">Fabrikasi / Kimpalan</option>
+        </select>
+        
+        <button @click="login()" class="w-full py-2 bg-[#64ffda] text-slate-900 font-bold hover:bg-cyan-300 transition">LOG MASUK</button>
+    </div>
+
+    <!-- SISTEM UTAMA -->
+    <div x-show="isLoggedIn" x-cloak class="max-w-6xl mx-auto h-full flex flex-col">
+        
+        <!-- HEADER HUD -->
+        <div class="flex justify-between items-center p-4 hud-border mb-4 bg-slate-900 rounded">
+            <div>
+                <h2 class="text-xl text-[#64ffda]" x-text="'ID: ' + user.name"></h2>
+                <p class="text-sm text-amber-500">Pangkat: <span x-text="getRankTitle()"></span></p>
+            </div>
+            <div class="text-right">
+                <p class="text-2xl text-[#64ffda] font-bold"><span x-text="user.xp"></span> XP</p>
+                <p class="text-xs">Uptime Streak: <span x-text="user.streak"></span> Hari</p>
+            </div>
+        </div>
+
+        <!-- NAVIGASI SEKTOR -->
+        <div class="flex gap-2 mb-4">
+            <button @click="activeTab = 'dashboard'" :class="activeTab == 'dashboard' ? 'bg-[#64ffda] text-slate-900' : 'hud-border text-[#64ffda]'" class="px-4 py-2 font-bold flex-1">Status Loji</button>
+            <button @click="activeTab = 'notes1'; startReadingNote()" :class="activeTab == 'notes1' ? 'bg-[#64ffda] text-slate-900' : 'hud-border text-[#64ffda]'" class="px-4 py-2 font-bold flex-1">Sektor 1: Asas Matematik</button>
+            <button @click="activeTab = 'notes2'; startReadingNote()" :class="activeTab == 'notes2' ? 'bg-[#64ffda] text-slate-900' : 'hud-border text-[#64ffda]'" class="px-4 py-2 font-bold flex-1">Sektor 2: Lanjutan</button>
+            <button @click="activeTab = 'exam'" :class="activeTab == 'exam' ? 'bg-amber-500 text-slate-900' : 'border border-amber-500 text-amber-500'" class="px-4 py-2 font-bold flex-1">Protokol Peperiksaan</button>
+            <button @click="logout()" class="px-4 py-2 border border-red-500 text-red-500 font-bold">LOG KELUAR</button>
+        </div>
+
+        <!-- RUANG KERJA (WORKSPACE) -->
+        <div class="flex-1 hud-border bg-slate-900 p-4 relative" style="min-height: 70vh;">
+            
+            <!-- Dashboard -->
+            <div x-show="activeTab == 'dashboard'">
+                <h3 class="text-2xl mb-4 text-[#64ffda]">Ringkasan Penyelenggaraan</h3>
+                <p>Selamat datang, sistem sedang menjejak sumbangan operasi anda ke dalam *Google Sheets Master Database*.</p>
+                <div class="mt-8 p-4 border border-slate-700 bg-slate-800">
+                    <p class="text-amber-500 mb-2">Tindakan Pantas Penentukuran (Calibration):</p>
+                    <button @click="awardXp(5, 'PRACTICE_TRY')" class="px-4 py-2 hud-border text-[#64ffda] mr-2 hover:bg-slate-700">Lapor Percubaan Latihan (+5 XP)</button>
+                    <button @click="awardXp(30, 'DAILY_QUESTION')" class="px-4 py-2 hud-border text-[#64ffda] hover:bg-slate-700">Lapor Latihan Harian Siap (+30 XP)</button>
+                </div>
+            </div>
+
+            <!-- Sektor 1: Fundamental Notes (Canva) -->
+            <div x-show="activeTab == 'notes1'" class="h-full w-full flex flex-col">
+                <div class="flex justify-between mb-2">
+                    <p class="text-amber-500 text-sm animate-pulse">Menyambung ke skematik: Fundamental Mathematics Notes...</p>
+                    <button @click="claimNoteXP()" class="px-3 py-1 bg-[#64ffda] text-slate-900 text-sm font-bold">Klaim XP Penelaahan (Perlu 90s)</button>
+                </div>
+                <iframe src="Fundamental Mathematics Notes.html" class="w-full flex-1 border-0 rounded bg-white"></iframe>
+            </div>
+
+            <!-- Sektor 2: GFM Note (Canva) -->
+            <div x-show="activeTab == 'notes2'" class="h-full w-full flex flex-col">
+                <div class="flex justify-between mb-2">
+                    <p class="text-amber-500 text-sm animate-pulse">Menyambung ke skematik: GFM Note...</p>
+                    <button @click="claimNoteXP()" class="px-3 py-1 bg-[#64ffda] text-slate-900 text-sm font-bold">Klaim XP Penelaahan (Perlu 90s)</button>
+                </div>
+                <iframe src="GFM note.html" class="w-full flex-1 border-0 rounded bg-white"></iframe>
+            </div>
+
+            <!-- Peperiksaan Akhir (Canva) -->
+            <div x-show="activeTab == 'exam'" class="h-full w-full flex flex-col">
+                <div class="flex justify-between mb-2">
+                    <p class="text-red-500 text-sm font-bold animate-pulse">AMARAN: Mod Overload Protokol Peperiksaan Aktif</p>
+                    <button @click="awardXp(100, 'EXAM_SUBMISSION')" class="px-3 py-1 bg-amber-500 text-slate-900 text-sm font-bold">Hantar Analisis Peperiksaan (+100 XP)</button>
+                </div>
+                <iframe src="Sistem Latihan Matematik TVET GFM031.html" class="w-full flex-1 border-0 rounded bg-white"></iframe>
+            </div>
+            
+        </div>
+    </div>
+</body>
+</html>
